@@ -1,0 +1,12 @@
+{
+  "default": {
+    "name": "默认设备",
+    "url": "https://api.day.app/Znodd8yskndqUUbMVnmzBn",
+    "description": "主要推送设备"
+  },
+  "zwp": {
+    "name": "zwp",
+    "url": "https://api.day.app/86dazGcLAVKQiTadqhXn8k",
+    "description": "111"
+  }
+}
