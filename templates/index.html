@@ -18,7 +18,7 @@
                         <h1 class="display-4 text-primary">
                             <i class="fas fa-red-packet"></i> 提醒系统
                         </h1>
-                        <p class="text-muted">多设备Bark推送，轻松管理你的红包提醒</p>
+                        <p class="text-muted">多设备Bark推送，轻松管理你的提醒</p>
                     </div>
 
                     <!-- 状态卡片 -->
@@ -85,12 +85,7 @@
                     <!-- 导航标签 -->
                     <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates" type="button" role="tab">
-                                <i class="fas fa-list"></i> 提醒模板
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="devices-tab" data-bs-toggle="tab" data-bs-target="#devices" type="button" role="tab">
+                            <button class="nav-link active" id="devices-tab" data-bs-toggle="tab" data-bs-target="#devices" type="button" role="tab">
                                 <i class="fas fa-mobile-alt"></i> 设备管理
                             </button>
                         </li>
@@ -103,21 +98,8 @@
 
                     <!-- 标签内容 -->
                     <div class="tab-content" id="mainTabsContent">
-                        <!-- 提醒模板 -->
-                        <div class="tab-pane fade show active" id="templates" role="tabpanel">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5><i class="fas fa-list"></i> 提醒模板管理</h5>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTemplateModal">
-                                    <i class="fas fa-plus"></i> 添加模板
-                                </button>
-                            </div>
-                            <div id="templatesList" class="row">
-                                <!-- 模板列表将通过JavaScript动态生成 -->
-                            </div>
-                        </div>
-
                         <!-- 设备管理 -->
-                        <div class="tab-pane fade" id="devices" role="tabpanel">
+                        <div class="tab-pane fade show active" id="devices" role="tabpanel">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5><i class="fas fa-mobile-alt"></i> 设备管理</h5>
                                 <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
@@ -148,47 +130,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 添加模板模态框 -->
-    <div class="modal fade" id="addTemplateModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">添加提醒模板</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addTemplateForm">
-                        <div class="mb-3">
-                            <label for="templateId" class="form-label">模板ID</label>
-                            <input type="text" class="form-control" id="templateId" name="template_id" required>
-                            <div class="form-text">唯一标识符，如：morning_reminder</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="templateName" class="form-label">模板名称</label>
-                            <input type="text" class="form-control" id="templateName" name="name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="templateTime" class="form-label">提醒时间</label>
-                            <input type="time" class="form-control" id="templateTime" name="time" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="templateTitle" class="form-label">消息标题</label>
-                            <input type="text" class="form-control" id="templateTitle" name="title" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="templateContent" class="form-label">消息内容</label>
-                            <textarea class="form-control" id="templateContent" name="content" rows="3" required></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-primary" id="saveTemplateBtn">保存模板</button>
                 </div>
             </div>
         </div>
@@ -252,6 +193,132 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 设备特定模板管理模态框 -->
+    <div class="modal fade" id="deviceTemplateModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">设备模板管理</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">设备：<span id="deviceTemplateDeviceName" class="fw-bold"></span></label>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6>模板列表</h6>
+                        <button class="btn btn-primary btn-sm" onclick="addTemplateToDevice()">
+                            <i class="fas fa-plus"></i> 新增模板
+                        </button>
+                    </div>
+                    <div id="deviceTemplatesList">
+                        <!-- 设备模板列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增设备模板模态框 -->
+    <div class="modal fade" id="addDeviceTemplateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">新增设备模板</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDeviceTemplateForm">
+                        <input type="hidden" id="addTemplateDeviceId" name="device_id">
+                        <div class="mb-3">
+                            <label for="addTemplateId" class="form-label">模板ID</label>
+                            <input type="text" class="form-control" id="addTemplateId" name="template_id" required>
+                            <div class="form-text">唯一标识符，如：morning_reminder</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addTemplateName" class="form-label">模板名称</label>
+                            <input type="text" class="form-control" id="addTemplateName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addTemplateTime" class="form-label">提醒时间</label>
+                            <input type="time" class="form-control" id="addTemplateTime" name="time" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addTemplateTitle" class="form-label">消息标题</label>
+                            <input type="text" class="form-control" id="addTemplateTitle" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addTemplateContent" class="form-label">消息内容</label>
+                            <textarea class="form-control" id="addTemplateContent" name="content" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="addTemplateEnabled" name="enabled" checked>
+                                <label class="form-check-label" for="addTemplateEnabled">
+                                    启用模板
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveDeviceTemplateBtn">保存模板</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑设备特定模板模态框 -->
+    <div class="modal fade" id="editDeviceTemplateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑设备模板</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDeviceTemplateForm">
+                        <input type="hidden" id="editDeviceId" name="device_id">
+                        <input type="hidden" id="editTemplateId" name="template_id">
+                        <div class="mb-3">
+                            <label class="form-label">模板名称</label>
+                            <input type="text" class="form-control" id="editTemplateName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editTemplateTime" class="form-label">提醒时间</label>
+                            <input type="time" class="form-control" id="editTemplateTime" name="time" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDeviceTemplateTitle" class="form-label">消息标题</label>
+                            <input type="text" class="form-control" id="editDeviceTemplateTitle" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDeviceTemplateContent" class="form-label">消息内容</label>
+                            <textarea class="form-control" id="editDeviceTemplateContent" name="content" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editTemplateEnabled" name="enabled">
+                                <label class="form-check-label" for="editTemplateEnabled">
+                                    启用模板
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger me-auto" id="deleteDeviceTemplateBtn">删除模板</button>
+                    <button type="button" class="btn btn-primary" id="updateDeviceTemplateBtn">保存</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 消息提示 -->

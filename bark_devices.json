@@ -2,11 +2,34 @@
   "default": {
     "name": "默认设备",
     "url": "https://api.day.app/Znodd8yskndqUUbMVnmzBn",
-    "description": "主要推送设备"
+    "description": "主要推送设备",
+    "templates": {
+      "labubu": {
+        "name": "发红包啦",
+        "time": "08:43",
+        "title": "发红包发红包",
+        "content": "要发红包",
+        "enabled": true
+      }
+    }
   },
   "zwp": {
     "name": "zwp",
     "url": "https://api.day.app/86dazGcLAVKQiTadqhXn8k",
     "description": "111"
+  },
+  "李婷婷": {
+    "name": "李婷婷",
+    "url": "https://api.day.app/RTHupwkdtpEV5K4jb6oNSH",
+    "description": "",
+    "templates": {
+      "Tingting": {
+        "name": "Tingting",
+        "time": "09:01",
+        "title": "谢自清要睡觉了",
+        "content": "快拍他",
+        "enabled": true
+      }
+    }
   }
 }

@@ -20,7 +20,7 @@ fi
 # 检查.env文件是否存在
 if [ ! -f ".env" ]; then
     echo "❌ 错误：未找到.env配置文件"
-    echo "请复制 env.example 为 .env 并配置你的PushPlus token"
+    echo "请复制 env.example 为 .env 并配置你的Bark推送URL"
     echo "命令：cp env.example .env"
     exit 1
 fi

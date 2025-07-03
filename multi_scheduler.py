@@ -9,8 +9,8 @@ class MultiTemplateScheduler:
     """多模板定时任务调度器"""
     
     def __init__(self):
-        self.sender = MultiBarkSender()
         self.template_manager = TemplateManager()
+        self.sender = MultiBarkSender(self.template_manager)
         self.setup_logging()
     
     def setup_logging(self):
@@ -18,37 +18,33 @@ class MultiTemplateScheduler:
         self.logger = logging.getLogger(__name__)
     
     def send_template_reminder(self, template_id):
-        """发送指定模板的提醒"""
-        template = self.template_manager.get_template(template_id)
-        if not template:
+        """发送指定模板的提醒，支持设备特定的自定义内容"""
+        # 获取所有有该模板的设备
+        all_templates = self.template_manager.get_all_templates()
+        if template_id not in all_templates:
             self.logger.error(f"模板 {template_id} 不存在")
             return
         
-        if not template.get("enabled", True):
-            self.logger.info(f"模板 {template_id} 已禁用，跳过发送")
+        device_ids = all_templates[template_id]["devices"]
+        if not device_ids:
+            self.logger.error(f"模板 {template_id} 没有关联的设备")
             return
         
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.logger.info(f"执行定时任务 - 发送模板 {template['name']} [{current_time}]")
+        self.logger.info(f"执行定时任务 - 发送模板 {template_id} [{current_time}]")
         
-        # 获取设备URL列表
-        device_urls = self.template_manager.get_device_urls(template["devices"])
-        
-        if not device_urls:
-            self.logger.error(f"模板 {template_id} 没有有效的设备")
-            return
-        
-        # 发送消息
-        success = self.sender.send_message(
-            bark_url=device_urls[0],  # 暂时只发送到第一个设备
-            title=template["title"],
-            content=template["content"]
+        # 使用新的发送方法，支持设备特定的内容
+        success = self.sender.send_template_to_devices(
+            template_id=template_id,
+            device_ids=device_ids,
+            sound="alarm",  # 使用闹钟提示音
+            icon="https://api.day.app/icon/red-packet.png"  # 红包图标
         )
         
         if success:
-            self.logger.info(f"模板 {template['name']} 发送成功")
+            self.logger.info(f"模板 {template_id} 发送成功")
         else:
-            self.logger.error(f"模板 {template['name']} 发送失败")
+            self.logger.error(f"模板 {template_id} 发送失败")
     
     def setup_schedules(self):
         """设置所有模板的定时任务"""
@@ -60,7 +56,7 @@ class MultiTemplateScheduler:
         for template_id, template in enabled_templates.items():
             time_str = template["time"]
             schedule.every().day.at(time_str).do(self.send_template_reminder, template_id)
-            self.logger.info(f"已设置模板 {template['name']}，每天 {time_str} 发送")
+            self.logger.info(f"已设置模板 {template_id}，每天 {time_str} 发送")
     
     def run(self):
         """运行调度器"""
@@ -85,12 +81,12 @@ class MultiTemplateScheduler:
     
     def test_template(self, template_id):
         """测试指定模板"""
-        template = self.template_manager.get_template(template_id)
-        if not template:
+        all_templates = self.template_manager.get_all_templates()
+        if template_id not in all_templates:
             self.logger.error(f"模板 {template_id} 不存在")
             return False
         
-        self.logger.info(f"测试模板: {template['name']}")
+        self.logger.info(f"测试模板: {template_id}")
         return self.send_template_reminder(template_id)
     
     def refresh_templates(self):

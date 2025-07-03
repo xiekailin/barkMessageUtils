@@ -1,10 +1,8 @@
 // 全局变量
-let templates = {};
 let devices = {};
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
-    loadTemplates();
     loadDevices();
     loadSchedulerStatus();
     loadLogs();
@@ -44,9 +42,6 @@ function bindEventListeners() {
     // 刷新日志
     document.getElementById('refreshLogsBtn').addEventListener('click', loadLogs);
     
-    // 保存模板
-    document.getElementById('saveTemplateBtn').addEventListener('click', saveTemplate);
-    
     // 保存设备
     document.getElementById('saveDeviceBtn').addEventListener('click', saveDevice);
 
@@ -85,22 +80,6 @@ function bindEventListeners() {
     });
 }
 
-// 加载模板
-async function loadTemplates() {
-    try {
-        const response = await fetch('/api/templates');
-        const result = await response.json();
-        
-        if (result.success) {
-            templates = result.data;
-            renderTemplates();
-            updateTemplateCount();
-        }
-    } catch (error) {
-        showToast('加载模板失败', 'error');
-    }
-}
-
 // 加载设备
 async function loadDevices() {
     try {
@@ -115,42 +94,6 @@ async function loadDevices() {
     } catch (error) {
         showToast('加载设备失败', 'error');
     }
-}
-
-// 渲染模板列表
-function renderTemplates() {
-    const container = document.getElementById('templatesList');
-    container.innerHTML = '';
-    
-    Object.entries(templates).forEach(([id, template]) => {
-        const card = document.createElement('div');
-        card.className = 'col-md-6 col-lg-4 mb-3';
-        card.innerHTML = `
-            <div class="card template-card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="card-title mb-0">${template.name}</h6>
-                        <span class="${template.enabled ? 'enabled-badge' : 'disabled-badge'}">
-                            ${template.enabled ? '启用' : '禁用'}
-                        </span>
-                    </div>
-                    <p class="card-text text-muted small">ID: ${id}</p>
-                    <p class="card-text"><strong>时间:</strong> ${template.time}</p>
-                    <p class="card-text"><strong>标题:</strong> ${template.title}</p>
-                    <p class="card-text"><strong>内容:</strong> ${template.content.substring(0, 50)}${template.content.length > 50 ? '...' : ''}</p>
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-primary me-2" onclick="testTemplate('${id}')">
-                            <i class="fas fa-paper-plane"></i> 测试
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${id}')">
-                            <i class="fas fa-trash"></i> 删除
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        container.appendChild(card);
-    });
 }
 
 // 渲染设备列表
@@ -169,6 +112,9 @@ function renderDevices() {
                     <p class="card-text"><strong>URL:</strong> ${device.url}</p>
                     ${device.description ? `<p class="card-text"><strong>描述:</strong> ${device.description}</p>` : ''}
                     <div class="mt-3">
+                        <button class="btn btn-sm btn-info me-2" onclick="manageDeviceTemplates('${id}')">
+                            <i class="fas fa-cog"></i> 模板设置
+                        </button>
                         <button class="btn btn-sm btn-danger" onclick="deleteDevice('${id}')">
                             <i class="fas fa-trash"></i> 删除
                         </button>
@@ -181,50 +127,8 @@ function renderDevices() {
 }
 
 // 更新统计信息
-function updateTemplateCount() {
-    document.getElementById('templateCount').textContent = Object.keys(templates).length;
-}
-
 function updateDeviceCount() {
     document.getElementById('deviceCount').textContent = Object.keys(devices).length;
-}
-
-// 保存模板
-async function saveTemplate() {
-    const form = document.getElementById('addTemplateForm');
-    const formData = new FormData(form);
-    const data = {};
-    
-    for (let [key, value] of formData.entries()) {
-        data[key] = value;
-    }
-    
-    // 添加默认设备
-    data.devices = ['default'];
-    data.enabled = true;
-    
-    try {
-        const response = await fetch('/api/templates', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showToast(result.message, 'success');
-            loadTemplates();
-            bootstrap.Modal.getInstance(document.getElementById('addTemplateModal')).hide();
-            form.reset();
-        } else {
-            showToast(result.message, 'error');
-        }
-    } catch (error) {
-        showToast('保存模板失败', 'error');
-    }
 }
 
 // 保存设备
@@ -240,24 +144,20 @@ async function saveDevice() {
     try {
         const response = await fetch('/api/devices', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
         
         const result = await response.json();
+        showToast(result.message, result.success ? 'success' : 'error');
         
         if (result.success) {
-            showToast(result.message, 'success');
-            loadDevices();
             bootstrap.Modal.getInstance(document.getElementById('addDeviceModal')).hide();
             form.reset();
-        } else {
-            showToast(result.message, 'error');
+            loadDevices();
         }
     } catch (error) {
-        showToast('保存设备失败', 'error');
+        showToast('保存失败', 'error');
     }
 }
 
@@ -265,14 +165,12 @@ async function saveDevice() {
 async function testPush() {
     const btn = document.getElementById('testBtn');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发送中...';
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> 推送中...';
     
     try {
         const response = await fetch('/api/test', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({})
         });
         
@@ -340,42 +238,7 @@ async function refreshScheduler() {
     }
 }
 
-// 模板操作函数
-async function testTemplate(templateId) {
-    // 动态填充设备列表
-    const select = document.getElementById('testDeviceSelect');
-    select.innerHTML = '<option value="all">全部设备</option>';
-    Object.entries(devices).forEach(([id, device]) => {
-        select.innerHTML += `<option value="${id}">${device.name}</option>`;
-    });
-    
-    // 设置模板ID到模态框
-    document.getElementById('testTemplateId').value = templateId;
-    
-    // 显示模态框
-    var modal = new bootstrap.Modal(document.getElementById('testDeviceModal'));
-    modal.show();
-}
-
-async function deleteTemplate(templateId) {
-    if (confirm('确定要删除这个模板吗？')) {
-        try {
-            const response = await fetch(`/api/templates/${templateId}`, {
-                method: 'DELETE'
-            });
-            
-            const result = await response.json();
-            showToast(result.message, result.success ? 'success' : 'error');
-            
-            if (result.success) {
-                loadTemplates();
-            }
-        } catch (error) {
-            showToast('删除失败', 'error');
-        }
-    }
-}
-
+// 设备操作函数
 async function deleteDevice(deviceId) {
     if (confirm('确定要删除这个设备吗？')) {
         try {
@@ -472,4 +335,260 @@ function showToast(message, type = 'info') {
     toast.addEventListener('hidden.bs.toast', function() {
         container.removeChild(toast);
     });
-} 
+}
+
+// 设备模板管理函数
+async function manageDeviceTemplates(deviceId) {
+    try {
+        const response = await fetch(`/api/devices/${deviceId}/templates`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const device = devices[deviceId];
+            document.getElementById('deviceTemplateDeviceName').textContent = device.name;
+            document.getElementById('addTemplateDeviceId').value = deviceId;
+            
+            const container = document.getElementById('deviceTemplatesList');
+            container.innerHTML = '';
+            
+            Object.entries(result.data).forEach(([templateId, template]) => {
+                const card = document.createElement('div');
+                card.className = 'card mb-3';
+                card.innerHTML = `
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title mb-0">${template.name}</h6>
+                            <span class="badge ${template.enabled ? 'bg-success' : 'bg-secondary'}">
+                                ${template.enabled ? '启用' : '禁用'}
+                            </span>
+                        </div>
+                        <p class="card-text text-muted small">ID: ${templateId}</p>
+                        <p class="card-text"><strong>时间:</strong> ${template.time}</p>
+                        <p class="card-text"><strong>标题:</strong> ${template.title}</p>
+                        <p class="card-text"><strong>内容:</strong> ${template.content.substring(0, 100)}${template.content.length > 100 ? '...' : ''}</p>
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-primary me-2" onclick="editDeviceTemplate('${deviceId}', '${templateId}')">
+                                <i class="fas fa-edit"></i> 编辑
+                            </button>
+                            <button class="btn btn-sm btn-warning me-2" onclick="testDeviceTemplate('${deviceId}', '${templateId}')">
+                                <i class="fas fa-paper-plane"></i> 测试
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteDeviceTemplate('${deviceId}', '${templateId}')">
+                                <i class="fas fa-trash"></i> 删除
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            // 显示模态框
+            var modal = new bootstrap.Modal(document.getElementById('deviceTemplateModal'));
+            modal.show();
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        showToast('加载设备模板失败', 'error');
+    }
+}
+
+// 新增模板到设备
+function addTemplateToDevice() {
+    // 隐藏设备模板管理模态框
+    bootstrap.Modal.getInstance(document.getElementById('deviceTemplateModal')).hide();
+    
+    // 显示新增模板模态框
+    var modal = new bootstrap.Modal(document.getElementById('addDeviceTemplateModal'));
+    modal.show();
+}
+
+// 编辑设备模板
+async function editDeviceTemplate(deviceId, templateId) {
+    try {
+        const response = await fetch(`/api/devices/${deviceId}/templates/${templateId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const template = result.data;
+            document.getElementById('editDeviceId').value = deviceId;
+            document.getElementById('editTemplateId').value = templateId;
+            document.getElementById('editTemplateName').value = template.name;
+            document.getElementById('editTemplateTime').value = template.time;
+            document.getElementById('editDeviceTemplateTitle').value = template.title;
+            document.getElementById('editDeviceTemplateContent').value = template.content;
+            document.getElementById('editTemplateEnabled').checked = template.enabled;
+            
+            // 隐藏设备模板管理模态框
+            bootstrap.Modal.getInstance(document.getElementById('deviceTemplateModal')).hide();
+            
+            // 显示编辑模态框
+            var modal = new bootstrap.Modal(document.getElementById('editDeviceTemplateModal'));
+            modal.show();
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        showToast('加载模板详情失败', 'error');
+    }
+}
+
+// 测试设备模板
+async function testDeviceTemplate(deviceId, templateId) {
+    try {
+        const response = await fetch('/api/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ template_id: templateId, device_id: deviceId })
+        });
+        
+        const result = await response.json();
+        showToast(result.message, result.success ? 'success' : 'error');
+    } catch (error) {
+        showToast('测试失败', 'error');
+    }
+}
+
+// 删除设备模板
+async function deleteDeviceTemplate(deviceId, templateId) {
+    if (confirm('确定要删除这个模板吗？')) {
+        try {
+            const response = await fetch(`/api/devices/${deviceId}/templates/${templateId}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            showToast(result.message, result.success ? 'success' : 'error');
+            
+            if (result.success) {
+                // 重新加载设备模板管理页面
+                manageDeviceTemplates(deviceId);
+            }
+        } catch (error) {
+            showToast('删除失败', 'error');
+        }
+    }
+}
+
+// 绑定设备模板编辑事件
+document.addEventListener('DOMContentLoaded', function() {
+    // 保存新增设备模板
+    document.getElementById('saveDeviceTemplateBtn').addEventListener('click', async function() {
+        const form = document.getElementById('addDeviceTemplateForm');
+        const formData = new FormData(form);
+        const data = {};
+        
+        for (let [key, value] of formData.entries()) {
+            if (key === 'enabled') {
+                data[key] = document.getElementById('addTemplateEnabled').checked;
+            } else {
+                data[key] = value;
+            }
+        }
+        
+        const deviceId = data.device_id;
+        delete data.device_id;
+        
+        this.disabled = true;
+        this.innerHTML = '保存中...';
+        
+        try {
+            const response = await fetch(`/api/devices/${deviceId}/templates`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            showToast(result.message, result.success ? 'success' : 'error');
+            
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('addDeviceTemplateModal')).hide();
+                form.reset();
+                // 重新加载设备模板管理页面
+                manageDeviceTemplates(deviceId);
+            }
+        } catch (error) {
+            showToast('保存失败', 'error');
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '保存模板';
+        }
+    });
+    
+    // 更新设备模板
+    document.getElementById('updateDeviceTemplateBtn').addEventListener('click', async function() {
+        const form = document.getElementById('editDeviceTemplateForm');
+        const formData = new FormData(form);
+        const data = {};
+        
+        for (let [key, value] of formData.entries()) {
+            if (key === 'enabled') {
+                data[key] = document.getElementById('editTemplateEnabled').checked;
+            } else {
+                data[key] = value;
+            }
+        }
+        
+        const deviceId = data.device_id;
+        const templateId = data.template_id;
+        delete data.device_id;
+        delete data.template_id;
+        
+        this.disabled = true;
+        this.innerHTML = '保存中...';
+        
+        try {
+            const response = await fetch(`/api/devices/${deviceId}/templates/${templateId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            showToast(result.message, result.success ? 'success' : 'error');
+            
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('editDeviceTemplateModal')).hide();
+                // 重新加载设备模板管理页面
+                manageDeviceTemplates(deviceId);
+            }
+        } catch (error) {
+            showToast('保存失败', 'error');
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '保存';
+        }
+    });
+    
+    // 删除设备模板
+    document.getElementById('deleteDeviceTemplateBtn').addEventListener('click', async function() {
+        const deviceId = document.getElementById('editDeviceId').value;
+        const templateId = document.getElementById('editTemplateId').value;
+        
+        if (confirm('确定要删除这个模板吗？')) {
+            this.disabled = true;
+            this.innerHTML = '删除中...';
+            
+            try {
+                const response = await fetch(`/api/devices/${deviceId}/templates/${templateId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                showToast(result.message, result.success ? 'success' : 'error');
+                
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('editDeviceTemplateModal')).hide();
+                    // 重新加载设备模板管理页面
+                    manageDeviceTemplates(deviceId);
+                }
+            } catch (error) {
+                showToast('删除失败', 'error');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '删除模板';
+            }
+        }
+    });
+}); 
